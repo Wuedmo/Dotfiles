@@ -139,8 +139,8 @@ log_step "[$CURRENT_STEP/$TOTAL_STEPS] Setting up LazyVim"
 bash "$SCRIPT_DIR/setup-lazyvim"
 
 CURRENT_STEP=$((CURRENT_STEP + 1))
-log_step "[$CURRENT_STEP/$TOTAL_STEPS] Copying configuration files"
-bash "$SCRIPT_DIR/setup-config"
+# log_step "[$CURRENT_STEP/$TOTAL_STEPS] Copying configuration files"
+# bash "$SCRIPT_DIR/setup-config"
 
 CURRENT_STEP=$((CURRENT_STEP + 1))
 log_step "[$CURRENT_STEP/$TOTAL_STEPS] Hardware based setup"
