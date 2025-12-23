@@ -18,6 +18,25 @@ fi
 source "$SCRIPT_DIR/lib/helpers.sh"
 source "$SCRIPT_DIR/lib/backup.sh"
 
+# CLI flags
+DRY_RUN=false
+FORCE_CACHYOS=false
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --dry-run|-n)
+      DRY_RUN=true
+      shift
+      ;;
+    --cachyos)
+      FORCE_CACHYOS=true
+      shift
+      ;;
+    *) break ;;
+  esac
+done
+
+export DRY_RUN FORCE_CACHYOS
+
 # Initialize backup session
 BACKUP_SESSION=$(init_backup_session)
 log_info "Backup session: $BACKUP_SESSION"
@@ -65,7 +84,7 @@ _installPackages() {
     fi
 
     # Try to install, handle conflicts gracefully
-    if spinner "Installing $pkg... [$current/$total]" paru --noconfirm --needed -S "${pkg}" 2>&1; then
+    if spinner "Installing $pkg... [$current/$total]" pkg_install "$pkg"; then
       log_success "$pkg"
     else
       log_error "Failed to install: $pkg"
@@ -79,7 +98,7 @@ _installPackages() {
     for pkg in "${failed_packages[@]}"; do
       log_detail "$pkg"
     done
-    log_info "You can try installing them manually with: paru -S <package_name>"
+    log_info "You can try installing them manually with: pkg_install <package_name> or paru -S <package_name> (if using an AUR helper)"
   fi
 }
 
@@ -91,9 +110,20 @@ TOTAL_STEPS=8
 CURRENT_STEP=0
 
 if ! is_installed "paru"; then
-  CURRENT_STEP=$((CURRENT_STEP + 1))
-  log_step "[$CURRENT_STEP/$TOTAL_STEPS] Installing paru AUR helper"
-  _installParu
+  if is_cachyos; then
+    log_detail "paru not installed. CachyOS prefers official repos; AUR helper not required."
+    if ask_yes_no "Install paru AUR helper anyway?"; then
+      CURRENT_STEP=$((CURRENT_STEP + 1))
+      log_step "[$CURRENT_STEP/$TOTAL_STEPS] Installing paru AUR helper"
+      _installParu
+    else
+      log_detail "Skipping paru installation on CachyOS"
+    fi
+  else
+    CURRENT_STEP=$((CURRENT_STEP + 1))
+    log_step "[$CURRENT_STEP/$TOTAL_STEPS] Installing paru AUR helper"
+    _installParu
+  fi
 fi
 
 CURRENT_STEP=$((CURRENT_STEP + 1))

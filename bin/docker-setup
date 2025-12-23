@@ -2,6 +2,11 @@
 
 source "$HOME/.local/share/dotfiles/bin/lib/helpers.sh"
 
+# Parse common flags (export DRY_RUN/FORCE_CACHYOS)
+if type parse_common_flags >/dev/null 2>&1; then
+  parse_common_flags "$@" >/dev/null
+fi
+
 set -e
 
 log_header "Docker Setup"
@@ -36,15 +41,27 @@ else
 fi
 
 log_step "Installing lazydocker..."
-if ! command -v paru &>/dev/null; then
-  log_info "paru not installed, skipping lazydocker"
-  log_detail "Install manually: paru -S lazydocker"
-else
-  if paru -S --noconfirm lazydocker 2>/dev/null; then
+if command -v pkg_install >/dev/null 2>&1; then
+  if pkg_install lazydocker; then
     log_success "lazydocker installed"
   else
-    log_error "Could not install lazydocker"
-    log_detail "Install manually: paru -S lazydocker"
+    log_info "Could not install lazydocker via pkg_install (may be unavailable)"
+    log_detail "Install manually if desired: pkg_install lazydocker or paru -S lazydocker"
+  fi
+else
+  if is_cachyos; then
+    log_info "Skipping lazydocker on CachyOS (AUR package)"
+    log_detail "Install manually if desired: pkg_install lazydocker or paru -S lazydocker"
+  elif command -v paru &>/dev/null; then
+    if paru -S --noconfirm lazydocker 2>/dev/null; then
+      log_success "lazydocker installed"
+    else
+      log_error "Could not install lazydocker"
+      log_detail "Install manually: pkg_install lazydocker or paru -S lazydocker"
+    fi
+  else
+    log_info "paru not installed, skipping lazydocker"
+    log_detail "Install manually: pkg_install lazydocker or paru -S lazydocker"
   fi
 fi
 

@@ -1,6 +1,11 @@
 #!/bin/bash
 source "$HOME/.local/share/dotfiles/bin/lib/helpers.sh"
 
+# Parse common flags (export DRY_RUN/FORCE_CACHYOS)
+if type parse_common_flags >/dev/null 2>&1; then
+  parse_common_flags "$@" >/dev/null
+fi
+
 CONFIG_DIR="$HOME/.config/ollama-chat"
 DEFAULT_MODEL_FILE="$CONFIG_DIR/default-model"
 
@@ -64,12 +69,34 @@ handle_install() {
   log_step "Installing $package... (might take a while)"
   sudo -v
 
-  if spinner "Installing $package..." paru --noconfirm --needed -S "$package" 2>&1; then
-    log_success "$package installed"
+  if command -v pkg_install >/dev/null 2>&1; then
+    if spinner "Installing $package..." pkg_install "$package"; then
+      log_success "$package installed"
+    else
+      log_error "Failed to install $package via pkg_install"
+      show_done
+      exit 1
+    fi
   else
-    log_error "Failed to install $package"
-    show_done
-    exit 1
+    if is_cachyos; then
+      log_error "pkg_install not available and AUR installs are skipped on CachyOS"
+      log_detail "Install manually if desired: pkg_install $package or paru -S $package"
+      show_done
+      exit 1
+    elif command -v paru >/dev/null 2>&1; then
+      if spinner "Installing $package..." paru --noconfirm --needed -S "$package" 2>&1; then
+        log_success "$package installed"
+      else
+        log_error "Failed to install $package"
+        show_done
+        exit 1
+      fi
+    else
+      log_error "No installer available (paru not found and pkg_install unavailable)"
+      log_detail "Install manually: $package"
+      show_done
+      exit 1
+    fi
   fi
 
   echo

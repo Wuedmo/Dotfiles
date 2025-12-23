@@ -56,10 +56,20 @@ NEW_PACKAGES=(
 
 for pkg in "${NEW_PACKAGES[@]}"; do
   if ! pacman -Qi "$pkg" &>/dev/null; then
-    if sudo pacman -S "$pkg" --noconfirm --needed 2>/dev/null || paru -S "$pkg" --noconfirm --needed 2>/dev/null; then
-      log_detail "$pkg installed"
+    if command -v pkg_install >/dev/null 2>&1; then
+      if pkg_install "$pkg"; then
+        log_detail "$pkg installed"
+      else
+        log_error "Failed to install $pkg"
+      fi
     else
-      log_error "Failed to install $pkg"
+      if pkg_install "$pkg" 2>/dev/null; then
+        log_detail "$pkg installed"
+      elif sudo pacman -S "$pkg" --noconfirm --needed 2>/dev/null; then
+        log_detail "$pkg installed"
+      else
+        log_error "Failed to install $pkg"
+      fi
     fi
   fi
 done

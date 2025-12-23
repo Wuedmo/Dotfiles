@@ -24,12 +24,6 @@ Quick info:
 - [Installation](#installation)
   - [Automatic installer](#automatic-installer)
   - [Manual installation](#manual-installation)
-- [Screenshots & Videos](#screenshots--videos)
-- [Keybinds](#keybinds)
-- [Theming & Customization](#theming--customization)
-  - [Changing Themes](#changing-themes)
-  - [Customizing Configs](#customizing-configs)
-- [Credits](#credits)
 
 ---
 
@@ -50,83 +44,38 @@ Quick info:
 curl -fsSL https://raw.githubusercontent.com/Maciejonos/dotfiles/master/setup.sh | bash
 ```
 
-**⚠️ Important Notes:**
+### CachyOS / Safe mode
 
-- This is specifically for **Arch Linux with Hyprland**
-- I've tested the installer on both fresh installs and configured desktops, but ideally you should **know what you're doing**, make sure to backup manually just in case
-- Everything that will be changed is backed up first
+The installer detects CachyOS and prefers official repositories over the AUR. New flags:
 
-**What the installer does:**
+- `--cachyos` : run installer in CachyOS-first mode (skips automatic AUR installs unless confirmed).
+- `--dry-run` or `-n` : show intended actions without applying changes.
 
-<details>
-<summary><b>Backup</b></summary>
+Behavior highlights:
 
-- Backs up everything that will be changed ([backup script](install/lib/backup.sh))
-  - Files in `~/.config`
-  - `pacman.conf`
-  - Ly display manager configuration (if installed)
-  - ZSH and LazyVim configs
-  - Everything else that gets modified
-- Creates a backup folder in your Home directory with:
-  - A text file listing all changed files
-  - Commands to quickly revert everything
-  - A [rollback script](install/lib/rollback.sh) for easy restoration
+- `/etc/pacman.conf` is no longer overwritten silently — the installer shows a diff and prompts before replacing.
+- Critical system edits (PAM, mkinitcpio) are interactive: backups are created, diffs shown, and changes applied only on confirmation.
+- Package installs prefer repository packages on CachyOS; AUR helpers (like `paru`) are optional and installed only with confirmation.
 
-</details>
+Example:
 
-<details>
-<summary><b>Package Installation</b></summary>
+```bash
+~/.local/share/dotfiles/install/install.sh --cachyos --dry-run
+```
 
-- Installs [packages](install/pkgs.txt) from official repos and AUR
+### NVIDIA / initramfs notes
 
-</details>
+- The installer will detect the initramfs tooling on your system and act accordingly:
+  - If `mkinitcpio` is present, the installer will propose safe edits to `/etc/mkinitcpio.conf`, show a unified diff, and ask before applying. It will also offer to regenerate the initramfs (`mkinitcpio -P`). These operations respect `--dry-run`.
+  - If `dracut` is present, the installer will not modify dracut configuration automatically. It will provide guidance and suggest running `sudo dracut --force` manually after ensuring required modules are available.
 
-<details>
-<summary><b>Hardware Detection</b></summary>
+If you prefer to review or apply NVIDIA/initramfs changes manually, run the NVIDIA setup in dry-run mode first to preview changes:
 
-The installer [detects your hardware](install/setup-by-hardware):
+```bash
+DRY_RUN=true FORCE_CACHYOS=true ~/.local/share/dotfiles/install/setup-nvidia
+```
 
-- **Laptop/Desktop** - Uses brightnessctl or ddcutil respectively, applies proper Hyprland keybinding profiles
-- **Monitor Configuration** - Checks your monitor's highest resolution and refresh rate with `hyprctl monitors` and creates appropriate `monitors.conf`
-- **Nvidia GPUs** - Detects Nvidia cards and applies [Nvidia-specific setup](install/setup-nvidia) with proper Hyprland env configs
-
-</details>
-
-<details>
-<summary><b>Configuration & Theming</b></summary>
-
-- Replaces configuration files in `~/.config` with the [config](config) directory contents
-- Sets up static and dynamic themes via [theme setup](install/setup-theme)
-- Configures symlinks for theme management
-- Some files live in the [default](default) directory - these are git synced and will get overwritten with updates
-
-</details>
-
-<details>
-<summary><b>Scripts</b></summary>
-
-A big collection of scripts, mainly used with Walker & Elephant. If installing manually make sure to add the scripts folder to path:
-
-- **Theme Management** - Switch themes, cycle backgrounds, apply dynamic theming
-- **Development** - PostgreSQL setup/backup/restore, Docker setup, Node.js setup
-- **Package Management** - Install/remove packages interactively
-- **Media Tools** - Video downloads (yt-dlp), transcoding (ffmpeg, handbrake-cli)
-- **System Utils** - Backup/restore files, keybinds, screenshots menu and video recording
-- Most scripts are accessible interactively through Walker or Elephant
-
-</details>
-
-<details>
-<summary><b>System Configuration</b></summary>
-
-- [System setup](install/setup-system) configures:
-  - Git configuration
-  - Ly display manager (if installed)
-  - Pacman configuration
-  - UFW firewall
-- Full [ZSH setup](default/zshrc) with modular configuration
-
-</details>
+This prints proposed file operations (they begin with `DRY-RUN:`) without making changes.
 
 ### Manual installation
 

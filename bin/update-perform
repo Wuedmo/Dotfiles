@@ -1,6 +1,11 @@
 #!/bin/bash
 source "$HOME/.local/share/dotfiles/bin/lib/helpers.sh"
 
+# Parse common flags (export DRY_RUN/FORCE_CACHYOS)
+if type parse_common_flags >/dev/null 2>&1; then
+  parse_common_flags "$@" >/dev/null
+fi
+
 clear
 log_header "Updates"
 
@@ -25,7 +30,16 @@ fi
 echo
 
 if command -v pacman &>/dev/null; then
-  paru -Syu --noconfirm
+  if is_cachyos; then
+    log_info "Running system update using pacman (CachyOS detected)"
+    run_cmd "sudo pacman -Syu --noconfirm"
+  else
+    if command -v paru >/dev/null 2>&1; then
+      run_cmd "paru -Syu --noconfirm"
+    else
+      run_cmd "sudo pacman -Syu --noconfirm"
+    fi
+  fi
 else
   log_error "Platform not supported"
   exit 1
@@ -55,9 +69,9 @@ restart-app elephant
 pkill -RTMIN+1 waybar
 echo
 
-if [ "$(uname -r | sed 's/-arch/\.arch/')" != "$(pacman -Q linux | awk '{print $2}')" ]; then
-  log_info "Linux kernel has been updated."
-  if ask_yes_no "Reboot now?"; then
+if kernel_needs_reboot; then
+  log_info "Linux kernel appears to differ from the running kernel package."
+  if ask_yes_no "Reboot now to apply the new kernel?"; then
     sudo reboot now
   fi
 fi

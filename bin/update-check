@@ -20,6 +20,10 @@ threshhold_yellow=25
 threshhold_red=100
 
 if [[ $(_checkCommandExists "pacman") == 0 ]]; then
+        # Parse common flags (export DRY_RUN/FORCE_CACHYOS)
+        if type parse_common_flags >/dev/null 2>&1; then
+            parse_common_flags "$@" >/dev/null
+        fi
     aur_helper="paru"
     check_lock_files() {
         local pacman_lock="/var/lib/pacman/db.lck"
@@ -33,10 +37,12 @@ if [[ $(_checkCommandExists "pacman") == 0 ]]; then
     official_updates=$(checkupdates 2>/dev/null | wc -l)
 
     aur_updates=0
-    if command -v paru >/dev/null 2>&1; then
+    if command -v paru >/dev/null 2>&1 && ! is_cachyos; then
         aur_updates=$(paru -Qua 2>/dev/null | wc -l)
-    elif command -v yay >/dev/null 2>&1; then
+    elif command -v yay >/dev/null 2>&1 && ! is_cachyos; then
         aur_updates=$(yay -Qua 2>/dev/null | wc -l)
+    else
+        aur_updates=0
     fi
 
     updates=$((official_updates + aur_updates))

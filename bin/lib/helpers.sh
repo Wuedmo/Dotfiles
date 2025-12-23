@@ -11,6 +11,43 @@ _has_gum() {
   command -v gum &>/dev/null
 }
 
+# Source shared install helpers when available to expose pkg_install/is_cachyos
+if [ -f "$HOME/.local/share/dotfiles/install/lib/helpers.sh" ]; then
+  # shellcheck source=/dev/null
+  source "$HOME/.local/share/dotfiles/install/lib/helpers.sh"
+fi
+
+# Propagate DRY_RUN and FORCE_CACHYOS from environment so bin scripts
+# can respect dry-run and CachyOS modes when invoked separately.
+DRY_RUN=${DRY_RUN:-false}
+FORCE_CACHYOS=${FORCE_CACHYOS:-false}
+export DRY_RUN FORCE_CACHYOS
+
+# Parse common CLI flags: --dry-run/-n and --cachyos
+# Usage: parse_common_flags "$@"  (function will export DRY_RUN and FORCE_CACHYOS)
+parse_common_flags() {
+  local argv=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -n|--dry-run)
+        DRY_RUN=true; shift ;;
+      --cachyos)
+        FORCE_CACHYOS=true; shift ;;
+      --)
+        shift
+        while [[ $# -gt 0 ]]; do argv+=("$1"); shift; done
+        break
+        ;;
+      *) argv+=("$1"); shift ;;
+    esac
+  done
+  export DRY_RUN FORCE_CACHYOS
+  # Echo remaining args (space-separated) so callers may reassign if desired
+  if [ ${#argv[@]} -gt 0 ]; then
+    printf '%s\n' "${argv[@]}"
+  fi
+}
+
 _ensure_gum() {
   if ! _has_gum; then
     echo "Error: gum is required but not installed."
@@ -20,6 +57,11 @@ _ensure_gum() {
 }
 
 _ensure_gum
+
+# Visible marker for dry-run mode so test harnesses can detect it
+if [ "$DRY_RUN" = true ]; then
+  echo "DRY-RUN MODE: scripts will not apply changes"
+fi
 
 log_header() {
   local text="$1"
