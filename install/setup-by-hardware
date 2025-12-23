@@ -18,16 +18,6 @@ else
   ENV_CONF="env.conf"
 fi
 
-HARDWARE=$(detect_hardware_type)
-if [ "$HARDWARE" = "laptop" ]; then
-  spinner "Installing brightnessctl..." pkg_install brightnessctl
-  KEYBIND_CONF="laptop-keybindings.conf"
-  log_detail "Detected laptop hardware"
-else
-  spinner "Installing ddcutil..." pkg_install ddcutil
-  KEYBIND_CONF="desktop-keybindings.conf"
-  log_detail "Detected desktop hardware"
-fi
 
 # Remove any existing env/keybinding lines first
 sed -i '/source = .*\/\(nvidia-env\.conf\|env\.conf\)$/d' "$HYPRLAND_CONF"

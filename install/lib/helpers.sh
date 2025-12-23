@@ -17,6 +17,9 @@ _has_gum() {
     command -v gum &> /dev/null
 }
 
+# Path to this helpers file (used to source functions in subshells)
+HELPERS_FILE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)/$(basename -- "${BASH_SOURCE[0]}")"
+
 is_installed() {
     pacman -Q "$1" &>/dev/null
 }
@@ -116,16 +119,29 @@ log_detail() {
 spinner() {
     local title="$1"
     shift
+    # In dry-run mode avoid interactive TUI spinners (gum) to prevent blocking.
+    local cmd=""
+    for a in "$@"; do
+        cmd+="$(printf '%q ' "$a")"
+    done
+
+    if [ "$DRY_RUN" = true ]; then
+        echo "DRY-RUN: $title -> $cmd"
+        bash -lc "source '$HELPERS_FILE' >/dev/null 2>&1; $cmd"
+        return
+    fi
 
     if _has_gum; then
+        # Run the provided command in a bash subshell that sources this helpers file
+        # so shell functions (like pkg_install) are available.
         gum spin \
             --spinner dot \
             --title "$title" \
             --show-error \
-            -- "$@"
+            -- bash -lc "source '$HELPERS_FILE' >/dev/null 2>&1; $cmd"
     else
         echo -e "${_CYAN}⟳${_NC} $title"
-        "$@"
+        bash -lc "source '$HELPERS_FILE' >/dev/null 2>&1; $cmd"
     fi
 }
 

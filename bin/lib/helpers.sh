@@ -63,6 +63,11 @@ if [ "$DRY_RUN" = true ]; then
   echo "DRY-RUN MODE: scripts will not apply changes"
 fi
 
+# Ensure HELPERS_FILE points to the install helpers so spinner subshells can source it
+if [ -f "$HOME/.local/share/dotfiles/install/lib/helpers.sh" ]; then
+  HELPERS_FILE="$HOME/.local/share/dotfiles/install/lib/helpers.sh"
+fi
+
 log_header() {
   local text="$1"
 
@@ -124,12 +129,41 @@ log_detail() {
 spinner() {
   local title="$1"
   shift
+  # Construct command string
+  local cmd=""
+  for a in "$@"; do
+    cmd+="$(printf '%q ' "$a")"
+  done
 
-  gum spin \
-    --spinner dot \
-    --title "$title" \
-    --show-error \
-    -- "$@"
+  # In dry-run mode avoid interactive TUI spinners to prevent blocking.
+  if [ "${DRY_RUN:-false}" = true ]; then
+    echo "DRY-RUN: $title -> $cmd"
+    bash -lc "[ -n \"${HELPERS_FILE:-}\" ] && source '${HELPERS_FILE}' >/dev/null 2>&1; $cmd"
+    return
+  fi
+
+  if _has_gum; then
+    # If HELPERS_FILE is available, run the command in a bash subshell that
+    # sources it so shell functions (pkg_install, pkg_remove, etc.) are available.
+    if [ -n "${HELPERS_FILE:-}" ]; then
+      gum spin \
+        --spinner dot \
+        --title "$title" \
+        --show-error \
+        -- bash -lc "source '$HELPERS_FILE' >/dev/null 2>&1; $cmd"
+      return
+    fi
+
+    gum spin \
+      --spinner dot \
+      --title "$title" \
+      --show-error \
+      -- "$@"
+    return
+  fi
+
+  echo -e "${_CYAN}⟳${_NC} $title"
+  "$@"
 }
 
 ask_yes_no() {
