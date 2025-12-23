@@ -1,0 +1,122 @@
+# System & Security
+gnome-keyring
+openssh
+polkit-gnome
+ufw
+usbutils
+
+# Terminal & Shell
+bat
+bc
+btop
+eza
+fastfetch
+fd
+fzf
+ghostty
+jq
+pv
+ripgrep
+starship
+zoxide
+zsh
+
+# Development
+git
+lazygit
+neovim
+visual-studio-code-bin
+
+# Browsers
+zen-browser-bin
+
+# Hyprland
+hyprcursor
+hyprgraphics
+hypridle
+hyprland
+hyprland-guiutils
+hyprlang
+hyprlock
+hyprpaper
+hyprpicker
+hyprtoolkit
+hyprutils
+hyprwayland-scanner
+xdg-desktop-portal-hyprland
+
+# Wayland UI & Utilities
+gjs
+grim
+impala
+mako
+imagemagick
+matugen
+satty
+slurp
+sunsetr
+swayosd
+tesseract
+tesseract-data-eng
+tinte
+uwsm
+walker
+waybar
+zenity
+
+# Screen Recording & Video
+ffmpeg
+gpu-screen-recorder
+handbrake-cli
+yt-dlp
+
+# Audio
+pamixer
+wiremix
+
+# Bluetooth & Network
+bluez
+bluez-libs
+bluez-utils
+bluetui
+
+# File Management & Desktop
+gvfs-dnssd
+loupe
+nautilus
+nautilus-open-any-terminal
+rsync
+unzip
+
+# System Utilities
+pacman-contrib
+plocate
+power-profiles-daemon
+
+# Appearance
+bibata-cursor-theme
+gnome-themes-extra
+noto-fonts
+noto-fonts-emoji
+otf-font-awesome
+ttf-cascadia-mono-nerd
+yaru-icon-theme
+
+# Applications
+localsend-bin
+mpv
+
+# Elephant Suite
+elephant
+elephant-calc
+elephant-clipboard
+elephant-desktopapplications
+elephant-files
+elephant-menus
+elephant-providerlist
+elephant-symbols
+elephant-todo
+
+# Desktop Portals
+xdg-desktop-portal-gtk
+xdg-utils

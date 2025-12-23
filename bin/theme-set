@@ -1,0 +1,105 @@
+#!/bin/bash
+source "$HOME/.local/share/dotfiles/bin/lib/helpers.sh"
+
+THEMES_DIR="$HOME/.local/share/dotfiles/themes"
+CURRENT_THEME_LINK="$HOME/.local/share/dotfiles/current/theme"
+CURRENT_BACKGROUND_LINK="$HOME/.local/share/dotfiles/current/background"
+
+set_wallpaper() {
+  local wallpaper="$1"
+  ln -nsf "$wallpaper" "$CURRENT_BACKGROUND_LINK"
+
+  hyprctl monitors -j | jq -r '.[].name' | while read -r monitor; do
+    hyprctl hyprpaper reload "$monitor,$CURRENT_BACKGROUND_LINK"
+  done
+  log_success "Wallpaper set: $(basename "$wallpaper")"
+}
+
+reload_apps() {
+  log_step "Reloading applications"
+  restart-app waybar
+  restart-app swayosd
+  hyprctl reload
+  pkill -SIGUSR2 btop
+  makoctl reload
+  killall -SIGUSR2 ghostty
+  killall xdg-desktop-portal-gtk
+
+  local gnome_icons_theme="$HOME/.local/share/dotfiles/current/theme/icons.theme"
+  if [[ -f "$gnome_icons_theme" ]]; then
+    gsettings set org.gnome.desktop.interface icon-theme "$(<"$gnome_icons_theme")"
+  fi
+
+  log_success "Applications reloaded"
+}
+
+apply_dynamic_theme() {
+  local theme_name="$1"
+  local wallpaper="$2"
+
+  log_step "Applying ${theme_name^} theme"
+
+  ln -nsf "$THEMES_DIR/$theme_name" "$CURRENT_THEME_LINK"
+
+  if [[ -n "$wallpaper" ]]; then
+    set_wallpaper "$wallpaper"
+  fi
+
+  reload_apps
+  log_success "${theme_name^} theme applied"
+}
+
+switch_theme() {
+  local theme_name="$1"
+
+  theme_name=$(echo "$theme_name" | sed -E 's/<[^>]+>//g' | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
+
+  local theme_path="$THEMES_DIR/$theme_name"
+
+  if [[ ! -d "$theme_path" ]]; then
+    log_error "Theme '$theme_name' not found"
+    return 1
+  fi
+
+  log_step "Switching to theme: $theme_name"
+
+  ln -nsf "$theme_path" "$CURRENT_THEME_LINK"
+
+  local wallpaper=$(find -L "$theme_path/backgrounds" -type f | sort | head -n 1)
+  if [[ -n "$wallpaper" ]]; then
+    set_wallpaper "$wallpaper"
+  fi
+
+  reload_apps
+  log_success "Theme switched"
+}
+
+change_wallpaper() {
+  local wallpaper="$1"
+
+  if [[ ! -f "$wallpaper" ]]; then
+    log_error "Wallpaper not found"
+    return 1
+  fi
+
+  log_step "Changing wallpaper"
+  set_wallpaper "$wallpaper"
+
+  log_info "Use Tinte to regenerate colors for this wallpaper"
+}
+
+main() {
+  case "$1" in
+  tinte | matugen)
+    apply_dynamic_theme "$1" "$2"
+    ;;
+  --wallpaper)
+    change_wallpaper "$2"
+    ;;
+  *)
+    switch_theme "$1"
+    ;;
+  esac
+}
+
+main "$@"

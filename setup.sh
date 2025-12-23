@@ -3,7 +3,7 @@
 set -e
 
 DOTFILES_DIR="$HOME/.local/share/dotfiles"
-REPO_URL="https://github.com/Wuedmo/dotfiles.git"
+REPO_URL="https://github.com/Wuedmo/Dotfiles.git"
 
 echo "=============="
 echo "Dotfiles Setup"
@@ -44,4 +44,4 @@ echo "Starting installation..."
 echo
 
 # Run the installer
-bash "$DOTFILES_DIR/install/install"
+bash "$DOTFILES_DIR/install/install.sh"
